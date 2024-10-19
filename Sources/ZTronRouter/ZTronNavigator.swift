@@ -20,6 +20,7 @@ public final class ZTronNavigator: ObservableObject {
     @Published public private(set) var lastAction: ZTronNavigationAction?
     
     private let initialPath: PathComponents
+    private let rootSymbol: String
     
     /// Initialize a `Navigator` to be fed to `Router` manually.
     ///
@@ -29,12 +30,15 @@ public final class ZTronNavigator: ObservableObject {
     /// It is strongly advised to reference the `Navigator` via the provided Environment Object instead.
     ///
     /// - Parameter initialPath: The initial path the `Navigator` should start at once initialized.
-    internal init(initialPath: PathComponents = [">"]) {
+    public init(initialPath: PathComponents = [">"]) {
         assert(initialPath.count > 0, "initial path must not be empty")
         assert(initialPath.count <= 1, "initial path must contain only one symbol")
+        assert(initialPath.first != nil, "the first path component can't be an empty string")
         
         self.initialPath = initialPath
         self.historyStack = [initialPath]
+        
+        self.rootSymbol = initialPath.first!
     }
 
     // MARK: Getters.
@@ -88,7 +92,7 @@ public final class ZTronNavigator: ObservableObject {
     /// before the navigation and `nextPath` is the path to navigate to (absolute or relative). When navigating to an absolute path,
     /// this is reduced to Θ(forwardStack.count + nextPath.count).
     public func navigate(_ path: PathComponents, replace: Bool = false) {
-        let path = resolvePaths(self.path, path, root: initialPath.first!)
+        let path = resolvePaths(self.path, path, root: rootSymbol)
         let previousPath = self.path
         
         guard path != previousPath else {
@@ -220,11 +224,14 @@ public struct ZTronNavigationAction: Equatable {
     public let previousPath: PathComponents
     public let direction: Direction
     
+    private let rootSymbol: String
+    
     /// - Complexity: O(previousPath.count)
-    init(currentPath: [String], previousPath: [String], action: Action) {
+    init(currentPath: [String], previousPath: [String], action: Action, rootSymbol: String = ">") {
         self.action = action
         self.currentPath = currentPath
         self.previousPath = previousPath
+        self.rootSymbol = rootSymbol
         
         // Check whether the navigation went higher, deeper or sideways.
         if currentPath.count > previousPath.count
