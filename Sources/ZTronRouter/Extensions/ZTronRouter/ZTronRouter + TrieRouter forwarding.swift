@@ -118,6 +118,19 @@ extension ZTronRouter {
         return self.trie.route(path: peekPath, parameters: &params)
     }
     
+    
+    /// - Returns: The registered output of the graph for the specified path, if it exists; nil otherwise.
+    ///
+    /// - Parameter at: The path to peek.
+    /// - Parameter param: An object to retreive parameters
+    ///
+    /// - Complexity: **Time:** O(currentPath.count + at.count). **Space:** O(1).
+    public func peek(at path: ZTronNavigator.PathComponents, params: inout Parameters) -> RouterOutput? {
+        let peekPath = resolvePaths(self.navigator.path, path)
+
+        return self.trie.route(path: peekPath, parameters: &params)
+    }
+    
     /// Traverses all the constant routes (no parameters, anything, catchalls) via BFS.
     ///
     /// - Parameter visitOrder: A function that sorts the neighbours of every route before visiting them.
@@ -528,7 +541,11 @@ extension ZTronRouter {
         guard self.trie.route(path: at, parameters: &parameters) == nil else { return }
         
         self.trie.register(output, at: destinationPath.map { component in
-            return PathComponent.constant(component)
+            if component.first == ":" {
+                return PathComponent.parameter(component)
+            } else {
+                return PathComponent.constant(component)
+            }
         })
         
         self.registeredRoutesCount += 1
